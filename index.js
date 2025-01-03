@@ -49,6 +49,10 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+    // create db collection
+    const usersCollection = client.db("plan-net").collection("users");
+    const plantsCollection = client.db("plan-net").collection("plants");
+
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
       const email = req.body;
@@ -76,6 +80,35 @@ async function run() {
       } catch (err) {
         res.status(500).send(err);
       }
+    });
+
+    // users relate apis
+    app.post("/users/:email", async (req, res) => {
+      const userData = req.body;
+      const email = req.params.email;
+      const isExist = await usersCollection.findOne({ email });
+      if (isExist)
+        return res
+          .status(200)
+          .send("There is already have a user data in the db");
+
+      const result = await usersCollection.insertOne(userData);
+      res.status(201).json({
+        success: true,
+        message: "successfully saved user data to db",
+        data: result,
+      });
+    });
+
+    // plant related apis
+    app.post("/plants", async (req, res) => {
+      const plantData = req.body;
+      const result = await plantsCollection.insertOne(plantData);
+      res.status(201).json({
+        success: true,
+        message: "Successfully posted plant data",
+        data: result,
+      });
     });
 
     // Send a ping to confirm a successful connection
